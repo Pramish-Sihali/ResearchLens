@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResearchLens</title>
+    
+    <meta name="description" content="Analyze academic papers and discover research opportunities">
+
+    <!-- Google Fonts - Nunito -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Chart.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Main app uses Nunito */
+        body {
+            font-family: 'Nunito', sans-serif;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* References sidebar */
+        .sidebar-scrollable {
+            max-height: calc(100vh - 250px);
+            overflow-y: auto;
+        }
+
+        /* Abstract accordion */
+        .abstract-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .abstract-content.expanded {
+            max-height: 500px;
+        }
+
+        /* Proposal accordion */
+        .proposal-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+        }
+
+        .proposal-content.expanded {
+            max-height: 10000px;
+        }
+
+        /* Times New Roman for proposal */
+        .proposal-text {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 2;
+        }
+
+        .proposal-text h3 {
+            font-weight: bold;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* References section */
+        .references-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .references-content.expanded {
+            max-height: 2000px;
+        }
+
+        .references-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">ResearchLens</h1>
+            <p class="text-gray-600">Analyze academic papers and discover research opportunities</p>
+        </header>
+
+        <!-- Search Form -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <form id="searchForm" class="flex gap-4">
+                <input
+                    type="text"
+                    id="topicInput"
+                    placeholder="Enter research topic (e.g., machine learning in healthcare)"
+                    class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+                    required
+                    minlength="3"
+                    maxlength="200"
+                >
+                <button
+                    type="submit"
+                    id="submitBtn"
+                    class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 font-semibold"
+                >
+                    <span id="btnText">Analyze</span>
+                    <div id="btnSpinner" class="loading-spinner hidden"></div>
+                </button>
+            </form>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="hidden text-center py-12">
+            <div class="loading-spinner mx-auto mb-4" style="width: 48px; height: 48px; border-width: 4px;"></div>
+            <p class="text-gray-600 mb-2 text-lg">Analyzing research papers...</p>
+            <p class="text-sm text-gray-500">This may take 30-40 seconds</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="hidden bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+            <h3 class="text-red-800 font-semibold mb-2">Error</h3>
+            <p id="errorMessage" class="text-red-600"></p>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden">
+            <div class="max-w-4xl mx-auto space-y-6">
+                <!-- Summary -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Analysis Summary</h2>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="text-center">
+                                <p class="text-2xl font-bold text-blue-600" id="totalPapers">0</p>
+                                <p class="text-sm text-gray-500">Papers Analyzed</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-2xl font-bold text-green-600" id="avgCitations">0</p>
+                                <p class="text-sm text-gray-500">Avg Citations</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-2xl font-bold" id="trendDirection">-</p>
+                                <p class="text-sm text-gray-500">Trend</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-2xl font-bold" id="growthPercent">0%</p>
+                                <p class="text-sm text-gray-500">Growth</p>
+                            </div>
+                        </div>
+                        <p id="cacheIndicator" class="text-xs text-gray-400 mt-4 hidden">Results from cache</p>
+                    </div>
+
+                <!-- Trend Chart -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Citation Trends by Year</h2>
+                    <div class="h-64">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- References (Collapsible) -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <button id="referencesToggle" class="w-full flex justify-between items-center text-xl font-bold text-gray-800">
+                        <span>References (<span id="refCount">0</span> papers)</span>
+                        <svg id="referencesArrow" class="w-6 h-6 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div id="referencesContent" class="references-content mt-4">
+                        <div id="referencesList" class="references-list space-y-4 text-sm pt-4 border-t">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Research Gaps -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Research Gaps</h2>
+                    <ul id="researchGaps" class="space-y-3">
+                    </ul>
+                </div>
+
+                <!-- Research Questions -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Novel Research Questions</h2>
+                    <ol id="researchQuestions" class="space-y-3 list-decimal list-inside">
+                    </ol>
+                </div>
+
+                <!-- Methodology Suggestions -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Suggested Methodologies</h2>
+                    <ul id="methodologySuggestions" class="space-y-3">
+                    </ul>
+                </div>
+
+                <!-- Generate Proposal Button -->
+                <div class="text-center">
+                    <button
+                        id="generateProposalBtn"
+                        class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 font-semibold mx-auto"
+                    >
+                        <span id="proposalBtnText">Generate Research Proposal</span>
+                        <div id="proposalBtnSpinner" class="loading-spinner hidden"></div>
+                    </button>
+                </div>
+
+                <!-- Research Proposal (Expandable) -->
+                <div id="proposalSection" class="bg-white rounded-lg shadow-md p-6 hidden">
+                    <button id="proposalToggle" class="w-full flex justify-between items-center text-xl font-bold text-gray-800">
+                        <span>Research Proposal</span>
+                        <svg id="proposalArrow" class="w-6 h-6 transform transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div id="proposalContent" class="proposal-content expanded mt-4">
+                        <div class="proposal-text pt-4 border-t">
+                            <!-- Proposal Title -->
+                            <h3 class="text-center text-lg" id="proposalTitle"></h3>
+
+                            <!-- Introduction -->
+                            <h3>1. Introduction</h3>
+                            <p id="proposalIntro" class="text-justify"></p>
+
+                            <!-- Literature Review -->
+                            <h3>2. Literature Review</h3>
+                            <p id="proposalLitReview" class="text-justify"></p>
+
+                            <!-- Research Questions -->
+                            <h3>3. Research Questions</h3>
+                            <ol id="proposalQuestions" class="list-decimal list-inside space-y-2">
+                            </ol>
+
+                            <!-- Methodology -->
+                            <h3>4. Methodology</h3>
+                            <p id="proposalMethodology" class="text-justify"></p>
+
+                            <!-- Expected Outcomes -->
+                            <h3>5. Expected Outcomes</h3>
+                            <p id="proposalOutcomes" class="text-justify"></p>
+
+                            <!-- Timeline -->
+                            <div id="proposalTimelineSection">
+                                <h3>6. Timeline</h3>
+                                <p id="proposalTimeline" class="text-justify"></p>
+                            </div>
+
+                            <!-- References note -->
+                            <h3>7. References</h3>
+                            <p class="text-sm italic">See References section above for complete APA 7 formatted reference list.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_URL = 'http://localhost:5000';
+
+        // Store current analysis data
+        let currentAnalysisData = null;
+
+        // DOM Elements
+        const searchForm = document.getElementById('searchForm');
+        const topicInput = document.getElementById('topicInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnSpinner = document.getElementById('btnSpinner');
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultsSection = document.getElementById('resultsSection');
+        const proposalToggle = document.getElementById('proposalToggle');
+        const proposalContent = document.getElementById('proposalContent');
+        const proposalArrow = document.getElementById('proposalArrow');
+        const proposalSection = document.getElementById('proposalSection');
+        const generateProposalBtn = document.getElementById('generateProposalBtn');
+        const proposalBtnText = document.getElementById('proposalBtnText');
+        const proposalBtnSpinner = document.getElementById('proposalBtnSpinner');
+        const referencesToggle = document.getElementById('referencesToggle');
+        const referencesContent = document.getElementById('referencesContent');
+        const referencesArrow = document.getElementById('referencesArrow');
+
+        // Chart instance
+        let trendChart = null;
+
+        // References toggle
+        referencesToggle.addEventListener('click', () => {
+            referencesContent.classList.toggle('expanded');
+            referencesArrow.classList.toggle('rotate-180');
+        });
+
+        // Proposal toggle
+        proposalToggle.addEventListener('click', () => {
+            proposalContent.classList.toggle('expanded');
+            proposalArrow.classList.toggle('rotate-180');
+        });
+
+        // Generate Proposal button handler
+        generateProposalBtn.addEventListener('click', async () => {
+            if (!currentAnalysisData) return;
+
+            // Set loading state
+            generateProposalBtn.disabled = true;
+            proposalBtnText.textContent = 'Generating proposal...';
+            proposalBtnSpinner.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`${API_URL}/generate-proposal`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        topic: currentAnalysisData.topic,
+                        research_gaps: currentAnalysisData.research_gaps,
+                        research_questions: currentAnalysisData.research_questions,
+                        methodology_suggestions: currentAnalysisData.methodology_suggestions
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (data.proposal) {
+                    renderProposal(data.proposal);
+                    proposalSection.classList.remove('hidden');
+                    proposalSection.scrollIntoView({ behavior: 'smooth' });
+                }
+
+            } catch (error) {
+                console.error('Proposal generation failed:', error);
+                alert('Failed to generate proposal. Please try again.');
+            } finally {
+                generateProposalBtn.disabled = false;
+                proposalBtnText.textContent = 'Generate Research Proposal';
+                proposalBtnSpinner.classList.add('hidden');
+            }
+        });
+
+        // Form submission handler
+        searchForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const topic = topicInput.value.trim();
+            if (!topic) return;
+
+            // Reset state
+            currentAnalysisData = null;
+            proposalSection.classList.add('hidden');
+
+            // Show loading state
+            setLoading(true);
+            hideError();
+            hideResults();
+
+            try {
+                const response = await fetch(`${API_URL}/analyze`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ topic }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to analyze topic');
+                }
+
+                currentAnalysisData = data;
+                displayResults(data);
+
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // Set loading state
+        function setLoading(isLoading) {
+            submitBtn.disabled = isLoading;
+            btnText.textContent = isLoading ? 'Analyzing...' : 'Analyze';
+            btnSpinner.classList.toggle('hidden', !isLoading);
+            loadingState.classList.toggle('hidden', !isLoading);
+        }
+
+        // Show error
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorState.classList.remove('hidden');
+        }
+
+        // Hide error
+        function hideError() {
+            errorState.classList.add('hidden');
+        }
+
+        // Hide results
+        function hideResults() {
+            resultsSection.classList.add('hidden');
+        }
+
+        // Display results
+        function displayResults(data) {
+            // Summary stats
+            document.getElementById('totalPapers').textContent = data.paper_summary.total_papers;
+            document.getElementById('avgCitations').textContent = data.paper_summary.avg_citations;
+
+            // Trend direction with color
+            const trendDir = document.getElementById('trendDirection');
+            const trend = data.trend_analysis.trend_direction;
+            trendDir.textContent = formatTrend(trend);
+            trendDir.className = `text-2xl font-bold ${getTrendColor(trend)}`;
+
+            // Growth percentage
+            const growth = data.trend_analysis.growth_percentage;
+            const growthEl = document.getElementById('growthPercent');
+            growthEl.textContent = `${growth > 0 ? '+' : ''}${growth}%`;
+            growthEl.className = `text-2xl font-bold ${growth >= 0 ? 'text-green-600' : 'text-red-600'}`;
+
+            // Cache indicator
+            const cacheIndicator = document.getElementById('cacheIndicator');
+            cacheIndicator.classList.toggle('hidden', !data.from_cache);
+
+            // Render trend chart
+            renderChart(data.trend_analysis.chart_data);
+
+            // Research gaps
+            const gapsList = document.getElementById('researchGaps');
+            gapsList.innerHTML = data.research_gaps.map(gap =>
+                `<li class="flex items-start gap-2">
+                    <span class="text-blue-500 mt-1">&#8226;</span>
+                    <span class="text-gray-700">${escapeHtml(gap)}</span>
+                </li>`
+            ).join('');
+
+            // Research questions
+            const questionsList = document.getElementById('researchQuestions');
+            questionsList.innerHTML = data.research_questions.map(question =>
+                `<li class="text-gray-700">${escapeHtml(question)}</li>`
+            ).join('');
+
+            // Methodology suggestions
+            const methodsList = document.getElementById('methodologySuggestions');
+            methodsList.innerHTML = data.methodology_suggestions.map(method =>
+                `<li class="flex items-start gap-2">
+                    <span class="text-green-500 mt-1">&#8226;</span>
+                    <span class="text-gray-700">${escapeHtml(method)}</span>
+                </li>`
+            ).join('');
+
+            // Render references with abstracts
+            renderReferences(data.references);
+            document.getElementById('refCount').textContent = data.references.length;
+
+            // Show results
+            resultsSection.classList.remove('hidden');
+
+            // Scroll to results
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Render references sidebar with abstracts
+        function renderReferences(references) {
+            const refList = document.getElementById('referencesList');
+            refList.innerHTML = references.map((ref, index) =>
+                `<div class="pb-4 border-b border-gray-100 last:border-0">
+                    <span class="font-bold text-blue-600">[${ref.number}]</span>
+                    <p class="text-gray-700 mt-1 text-xs leading-relaxed">
+                        ${ref.url
+                            ? `<a href="${escapeHtml(ref.url)}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 hover:underline">${escapeHtml(ref.reference)}</a>`
+                            : escapeHtml(ref.reference)
+                        }
+                    </p>
+                    <button
+                        onclick="toggleAbstract(${index})"
+                        class="text-xs text-blue-500 hover:text-blue-700 mt-2 focus:outline-none"
+                        id="abstractBtn${index}"
+                    >
+                        View Abstract
+                    </button>
+                    <div id="abstract${index}" class="abstract-content mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                        ${escapeHtml(ref.abstract)}
+                    </div>
+                </div>`
+            ).join('');
+        }
+
+        // Toggle abstract visibility
+        function toggleAbstract(index) {
+            const abstractEl = document.getElementById(`abstract${index}`);
+            const btnEl = document.getElementById(`abstractBtn${index}`);
+
+            if (abstractEl.classList.contains('expanded')) {
+                abstractEl.classList.remove('expanded');
+                btnEl.textContent = 'View Abstract';
+            } else {
+                // Collapse all other abstracts (optional - one at a time)
+                document.querySelectorAll('.abstract-content').forEach(el => {
+                    el.classList.remove('expanded');
+                });
+                document.querySelectorAll('[id^="abstractBtn"]').forEach(btn => {
+                    btn.textContent = 'View Abstract';
+                });
+
+                abstractEl.classList.add('expanded');
+                btnEl.textContent = 'Hide Abstract';
+            }
+        }
+
+        // Render proposal
+        function renderProposal(proposal) {
+            document.getElementById('proposalTitle').textContent = proposal.title || 'Research Proposal';
+            document.getElementById('proposalIntro').textContent = proposal.introduction || '';
+            document.getElementById('proposalLitReview').textContent = proposal.literature_review || '';
+
+            // Research questions
+            const questionsEl = document.getElementById('proposalQuestions');
+            const questions = proposal.research_questions || [];
+            questionsEl.innerHTML = questions.map(q => `<li>${escapeHtml(q)}</li>`).join('');
+
+            document.getElementById('proposalMethodology').textContent = proposal.methodology || '';
+            document.getElementById('proposalOutcomes').textContent = proposal.expected_outcomes || '';
+
+            // Timeline (optional)
+            const timelineSection = document.getElementById('proposalTimelineSection');
+            if (proposal.timeline) {
+                document.getElementById('proposalTimeline').textContent = proposal.timeline;
+                timelineSection.classList.remove('hidden');
+            } else {
+                timelineSection.classList.add('hidden');
+            }
+        }
+
+        // Render trend chart
+        function renderChart(chartData) {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+
+            // Destroy existing chart
+            if (trendChart) {
+                trendChart.destroy();
+            }
+
+            // Create new chart
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.years,
+                    datasets: [{
+                        label: 'Average Citations',
+                        data: chartData.citations,
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: 'rgb(59, 130, 246)',
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Avg Citations: ${context.raw.toFixed(1)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Average Citations'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Publication Year'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Format trend direction
+        function formatTrend(trend) {
+            const formats = {
+                'heating_up': 'Heating Up',
+                'stable': 'Stable',
+                'cooling_down': 'Cooling Down'
+            };
+            return formats[trend] || trend;
+        }
+
+        // Get trend color class
+        function getTrendColor(trend) {
+            const colors = {
+                'heating_up': 'text-red-500',
+                'stable': 'text-yellow-500',
+                'cooling_down': 'text-blue-500'
+            };
+            return colors[trend] || 'text-gray-600';
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
