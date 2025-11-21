@@ -20,7 +20,7 @@ SEMANTIC_SCHOLAR_API_KEY = os.getenv("SEMANTIC_SCHOLAR_API_KEY")
 if not SEMANTIC_SCHOLAR_API_KEY:
     logger.warning("SEMANTIC_SCHOLAR_API_KEY not found in environment variables")
 BASE_URL = "https://api.semanticscholar.org/graph/v1"
-PAPERS_PER_REQUEST = 25
+PAPERS_PER_REQUEST = 60
 
 # Fields to retrieve for each paper
 PAPER_FIELDS = "title,abstract,year,citationCount,authors,url,externalIds,venue,journal"
