@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ResearchLens</title>
-    
+    <title>ResearchLens - AI Research Analysis</title>
+
     <meta name="description" content="Analyze academic papers and discover research opportunities">
 
     <!-- Google Fonts - Nunito -->
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS from CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,19 +16,38 @@
     <!-- Chart.js from CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Nunito', 'sans-serif'],
+                    },
+                    colors: {
+                        cream: '#F0EEE6',
+                        dark: '#141413',
+                        accent: '#121121',
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        /* Main app uses Nunito */
         body {
             font-family: 'Nunito', sans-serif;
+            background-color: #F0EEE6;
+            min-height: 100vh;
         }
 
+        /* Loading spinner */
         .loading-spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3b82f6;
+            border: 3px solid #F0EEE6;
+            border-top: 3px solid #121121;
             border-radius: 50%;
             width: 24px;
             height: 24px;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
         }
 
         @keyframes spin {
@@ -36,10 +55,26 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* References sidebar */
-        .sidebar-scrollable {
-            max-height: calc(100vh - 250px);
-            overflow-y: auto;
+        /* Skeleton loading */
+        .skeleton {
+            background: linear-gradient(90deg, #e8e6de 25%, #dddbd3 50%, #e8e6de 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* Fade in animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
         }
 
         /* Abstract accordion */
@@ -64,17 +99,151 @@
             max-height: 10000px;
         }
 
-        /* Times New Roman for proposal */
-        .proposal-text {
+        /* Academic Paper Styling - LaTeX-like formatting */
+        .academic-paper {
             font-family: 'Times New Roman', Times, serif;
             font-size: 12pt;
             line-height: 2;
+            color: #000;
+            background: white;
+            padding: 1in;
+            margin: 0 auto;
+            max-width: 8.5in;
         }
 
-        .proposal-text h3 {
+        .academic-paper .title-page {
+            text-align: center;
+            padding: 2in 0;
+            page-break-after: always;
+        }
+
+        .academic-paper .title-page h1 {
+            font-size: 18pt;
+            font-weight: bold;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+        }
+
+        .academic-paper .title-page .author {
+            font-size: 12pt;
+            margin: 0.5rem 0;
+        }
+
+        .academic-paper .title-page .affiliation {
+            font-size: 11pt;
+            font-style: italic;
+            margin: 0.5rem 0;
+        }
+
+        .academic-paper .title-page .date {
+            font-size: 12pt;
+            margin-top: 2rem;
+        }
+
+        .academic-paper .abstract-section {
+            margin: 2rem 0;
+        }
+
+        .academic-paper .abstract-section h2 {
+            font-size: 14pt;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .academic-paper .abstract-section p {
+            text-align: justify;
+            text-indent: 0;
+            font-size: 11pt;
+            line-height: 1.5;
+        }
+
+        .academic-paper .abstract-section .keywords {
+            margin-top: 1rem;
+            font-size: 11pt;
+        }
+
+        .academic-paper .abstract-section .keywords strong {
+            font-style: italic;
+        }
+
+        .academic-paper h2 {
+            font-size: 14pt;
             font-weight: bold;
             margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .academic-paper h3 {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-top: 1rem;
             margin-bottom: 0.5rem;
+        }
+
+        .academic-paper p {
+            text-align: justify;
+            text-indent: 0.5in;
+            margin-bottom: 0;
+        }
+
+        .academic-paper p.no-indent {
+            text-indent: 0;
+        }
+
+        .academic-paper ul, .academic-paper ol {
+            margin-left: 0.5in;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .academic-paper li {
+            margin-bottom: 0.25rem;
+        }
+
+        .academic-paper .section-number {
+            font-weight: bold;
+        }
+
+        .academic-paper .references-section {
+            margin-top: 2rem;
+        }
+
+        .academic-paper .references-section h2 {
+            text-align: center;
+        }
+
+        .academic-paper .reference-item {
+            text-indent: -0.5in;
+            padding-left: 0.5in;
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+
+        .academic-paper .page-number {
+            text-align: center;
+            font-size: 10pt;
+            margin-top: 1rem;
+            color: #666;
+        }
+
+        .academic-paper table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 11pt;
+        }
+
+        .academic-paper table th,
+        .academic-paper table td {
+            border: 1px solid #000;
+            padding: 0.5rem;
+            text-align: left;
+        }
+
+        .academic-paper table th {
+            font-weight: bold;
+            background: #f5f5f5;
         }
 
         /* References section */
@@ -89,35 +258,137 @@
         }
 
         .references-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        /* Custom scrollbar */
+        .references-list::-webkit-scrollbar,
+        .tab-content::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .references-list::-webkit-scrollbar-track,
+        .tab-content::-webkit-scrollbar-track {
+            background: #F0EEE6;
+        }
+
+        .references-list::-webkit-scrollbar-thumb,
+        .tab-content::-webkit-scrollbar-thumb {
+            background: #141413;
+            border-radius: 2px;
+        }
+
+        /* Tab styles */
+        .tab-btn {
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background-color: #141413;
+            color: #F0EEE6;
+        }
+
+        .tab-content {
             max-height: 400px;
             overflow-y: auto;
         }
+
+        /* Checkbox styles */
+        .custom-checkbox {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid #141413;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .custom-checkbox:checked {
+            background-color: #121121;
+            border-color: #121121;
+        }
+
+        .custom-checkbox:checked::after {
+            content: '✓';
+            display: block;
+            text-align: center;
+            color: #F0EEE6;
+            font-size: 12px;
+            line-height: 14px;
+        }
+
+        /* Button styles */
+        .btn-primary {
+            background-color: #141413;
+            color: #F0EEE6;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #121121;
+        }
+
+        .btn-primary:disabled {
+            background-color: #a0a0a0;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: #121121;
+            color: #F0EEE6;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background-color: #141413;
+        }
+
+        /* Card styles */
+        .card {
+            background-color: white;
+            border: 1px solid #e5e3db;
+        }
+
+        /* Input styles */
+        .input-field {
+            border: 2px solid #141413;
+            transition: all 0.2s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(18, 17, 33, 0.1);
+        }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8 max-w-7xl">
+<body>
+    <div class="container mx-auto px-4 py-6 max-w-6xl">
         <!-- Header -->
         <header class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">ResearchLens</h1>
-            <p class="text-gray-600">Analyze academic papers and discover research opportunities</p>
+            <h1 class="text-4xl font-extrabold text-dark mb-2">ResearchLens</h1>
+            <p class="text-dark/60 text-base font-medium">AI-Powered Research Analysis & Discovery</p>
         </header>
 
         <!-- Search Form -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <form id="searchForm" class="flex gap-4">
-                <input
-                    type="text"
-                    id="topicInput"
-                    placeholder="Enter research topic (e.g., machine learning in healthcare)"
-                    class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
-                    required
-                    minlength="3"
-                    maxlength="200"
-                >
+        <div class="card rounded-xl p-6 mb-6">
+            <form id="searchForm" class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1">
+                    <input
+                        type="text"
+                        id="topicInput"
+                        placeholder="Enter research topic (e.g., machine learning in healthcare)"
+                        class="w-full px-4 py-3 rounded-lg input-field text-dark placeholder-dark/40"
+                        required
+                        minlength="3"
+                        maxlength="200"
+                    >
+                </div>
                 <button
                     type="submit"
                     id="submitBtn"
-                    class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 font-semibold"
+                    class="px-6 py-3 btn-primary rounded-lg font-semibold flex items-center justify-center gap-2"
                 >
                     <span id="btnText">Analyze</span>
                     <div id="btnSpinner" class="loading-spinner hidden"></div>
@@ -126,143 +397,253 @@
         </div>
 
         <!-- Loading State -->
-        <div id="loadingState" class="hidden text-center py-12">
-            <div class="loading-spinner mx-auto mb-4" style="width: 48px; height: 48px; border-width: 4px;"></div>
-            <p class="text-gray-600 mb-2 text-lg">Analyzing research papers...</p>
-            <p class="text-sm text-gray-500">This may take 30-40 seconds</p>
+        <div id="loadingState" class="hidden">
+            <div class="card rounded-xl p-6 mb-6">
+                <div class="flex flex-col items-center py-6">
+                    <div class="loading-spinner mb-4" style="width: 48px; height: 48px; border-width: 4px;"></div>
+                    <p class="text-dark font-semibold mb-1">Analyzing Research Papers</p>
+                    <p class="text-sm text-dark/50">This may take 30-40 seconds</p>
+                </div>
+                <div class="space-y-3 mt-4 pt-4 border-t border-dark/10">
+                    <div class="skeleton h-3 rounded w-3/4"></div>
+                    <div class="skeleton h-3 rounded w-1/2"></div>
+                    <div class="skeleton h-3 rounded w-5/6"></div>
+                </div>
+            </div>
         </div>
 
         <!-- Error State -->
-        <div id="errorState" class="hidden bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
-            <h3 class="text-red-800 font-semibold mb-2">Error</h3>
-            <p id="errorMessage" class="text-red-600"></p>
+        <div id="errorState" class="hidden card rounded-xl p-4 mb-6 border-red-300 bg-red-50">
+            <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-red-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div>
+                    <h3 class="text-red-800 font-semibold text-sm">Analysis Failed</h3>
+                    <p id="errorMessage" class="text-red-600 text-sm"></p>
+                </div>
+            </div>
         </div>
 
         <!-- Results Section -->
         <div id="resultsSection" class="hidden">
-            <div class="max-w-4xl mx-auto space-y-6">
-                <!-- Summary -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h2 class="text-xl font-bold text-gray-800 mb-4">Analysis Summary</h2>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div class="text-center">
-                                <p class="text-2xl font-bold text-blue-600" id="totalPapers">0</p>
-                                <p class="text-sm text-gray-500">Papers Analyzed</p>
-                            </div>
-                            <div class="text-center">
-                                <p class="text-2xl font-bold text-green-600" id="avgCitations">0</p>
-                                <p class="text-sm text-gray-500">Avg Citations</p>
-                            </div>
-                            <div class="text-center">
-                                <p class="text-2xl font-bold" id="trendDirection">-</p>
-                                <p class="text-sm text-gray-500">Trend</p>
-                            </div>
-                            <div class="text-center">
-                                <p class="text-2xl font-bold" id="growthPercent">0%</p>
-                                <p class="text-sm text-gray-500">Growth</p>
-                            </div>
+            <!-- Top Row: Stats and Chart -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                <!-- Summary Stats -->
+                <div class="card rounded-xl p-5 fade-in">
+                    <h2 class="text-sm font-bold text-dark mb-4 uppercase tracking-wide">Summary</h2>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="text-center p-3 bg-cream rounded-lg">
+                            <p class="text-2xl font-bold text-dark" id="totalPapers">0</p>
+                            <p class="text-xs text-dark/50 font-medium">Papers</p>
                         </div>
-                        <p id="cacheIndicator" class="text-xs text-gray-400 mt-4 hidden">Results from cache</p>
+                        <div class="text-center p-3 bg-cream rounded-lg">
+                            <p class="text-2xl font-bold text-dark" id="avgCitations">0</p>
+                            <p class="text-xs text-dark/50 font-medium">Avg Citations</p>
+                        </div>
+                        <div class="text-center p-3 bg-cream rounded-lg">
+                            <p class="text-2xl font-bold" id="trendDirection">-</p>
+                            <p class="text-xs text-dark/50 font-medium">Trend</p>
+                        </div>
+                        <div class="text-center p-3 bg-cream rounded-lg">
+                            <p class="text-2xl font-bold" id="growthPercent">0%</p>
+                            <p class="text-xs text-dark/50 font-medium">Growth</p>
+                        </div>
                     </div>
+                    <p id="cacheIndicator" class="text-xs text-dark/40 mt-3 hidden">From cache</p>
+                </div>
 
                 <!-- Trend Chart -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h2 class="text-xl font-bold text-gray-800 mb-4">Citation Trends by Year</h2>
-                    <div class="h-64">
+                <div class="card rounded-xl p-5 fade-in">
+                    <h2 class="text-sm font-bold text-dark mb-4 uppercase tracking-wide">Citation Trends</h2>
+                    <div class="h-40">
                         <canvas id="trendChart"></canvas>
                     </div>
                 </div>
+            </div>
 
-                <!-- References (Collapsible) -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <button id="referencesToggle" class="w-full flex justify-between items-center text-xl font-bold text-gray-800">
-                        <span>References (<span id="refCount">0</span> papers)</span>
-                        <svg id="referencesArrow" class="w-6 h-6 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
+            <!-- Tabbed Content: Gaps, Questions, Methodologies -->
+            <div class="card rounded-xl p-5 mb-4 fade-in">
+                <!-- Tabs -->
+                <div class="flex gap-2 mb-4 border-b border-dark/10 pb-3">
+                    <button class="tab-btn active px-4 py-2 rounded-lg text-sm font-semibold" data-tab="gaps">
+                        Research Gaps
                     </button>
-                    <div id="referencesContent" class="references-content mt-4">
-                        <div id="referencesList" class="references-list space-y-4 text-sm pt-4 border-t">
-                        </div>
+                    <button class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold text-dark/60 hover:text-dark" data-tab="questions">
+                        Questions
+                    </button>
+                    <button class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold text-dark/60 hover:text-dark" data-tab="methods">
+                        Methodologies
+                    </button>
+                    <button class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold text-dark/60 hover:text-dark" data-tab="refs">
+                        References
+                    </button>
+                </div>
+
+                <!-- Tab Contents -->
+                <div id="gapsTab" class="tab-panel">
+                    <ul id="researchGaps" class="space-y-2 tab-content"></ul>
+                </div>
+
+                <div id="questionsTab" class="tab-panel hidden">
+                    <ul id="researchQuestions" class="space-y-2 tab-content"></ul>
+                </div>
+
+                <div id="methodsTab" class="tab-panel hidden">
+                    <ul id="methodologySuggestions" class="space-y-2 tab-content"></ul>
+                </div>
+
+                <div id="refsTab" class="tab-panel hidden">
+                    <div id="referencesList" class="space-y-3 tab-content text-sm"></div>
+                </div>
+            </div>
+
+            <!-- Proposal Generation Section -->
+            <div class="card rounded-xl p-5 mb-4 fade-in">
+                <h2 class="text-sm font-bold text-dark mb-4 uppercase tracking-wide">Generate Proposal</h2>
+                <p class="text-sm text-dark/60 mb-4">Select items to include in your research proposal:</p>
+
+                <!-- Selection Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <!-- Selected Gaps -->
+                    <div>
+                        <h3 class="text-xs font-bold text-dark mb-2 uppercase">Research Gaps</h3>
+                        <div id="gapSelections" class="space-y-2 max-h-32 overflow-y-auto"></div>
+                    </div>
+
+                    <!-- Selected Questions -->
+                    <div>
+                        <h3 class="text-xs font-bold text-dark mb-2 uppercase">Questions</h3>
+                        <div id="questionSelections" class="space-y-2 max-h-32 overflow-y-auto"></div>
+                    </div>
+
+                    <!-- Selected Methods -->
+                    <div>
+                        <h3 class="text-xs font-bold text-dark mb-2 uppercase">Methodologies</h3>
+                        <div id="methodSelections" class="space-y-2 max-h-32 overflow-y-auto"></div>
                     </div>
                 </div>
 
-                <!-- Research Gaps -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h2 class="text-xl font-bold text-gray-800 mb-4">Research Gaps</h2>
-                    <ul id="researchGaps" class="space-y-3">
-                    </ul>
-                </div>
+                <!-- Generate Button -->
+                <button
+                    id="generateProposalBtn"
+                    class="w-full px-6 py-3 btn-secondary rounded-lg font-semibold flex items-center justify-center gap-2"
+                >
+                    <span id="proposalBtnText">Generate Research Proposal</span>
+                    <div id="proposalBtnSpinner" class="loading-spinner hidden"></div>
+                </button>
+            </div>
 
-                <!-- Research Questions -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h2 class="text-xl font-bold text-gray-800 mb-4">Novel Research Questions</h2>
-                    <ol id="researchQuestions" class="space-y-3 list-decimal list-inside">
-                    </ol>
-                </div>
-
-                <!-- Methodology Suggestions -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h2 class="text-xl font-bold text-gray-800 mb-4">Suggested Methodologies</h2>
-                    <ul id="methodologySuggestions" class="space-y-3">
-                    </ul>
-                </div>
-
-                <!-- Generate Proposal Button -->
-                <div class="text-center">
-                    <button
-                        id="generateProposalBtn"
-                        class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 font-semibold mx-auto"
-                    >
-                        <span id="proposalBtnText">Generate Research Proposal</span>
-                        <div id="proposalBtnSpinner" class="loading-spinner hidden"></div>
-                    </button>
-                </div>
-
-                <!-- Research Proposal (Expandable) -->
-                <div id="proposalSection" class="bg-white rounded-lg shadow-md p-6 hidden">
-                    <button id="proposalToggle" class="w-full flex justify-between items-center text-xl font-bold text-gray-800">
-                        <span>Research Proposal</span>
-                        <svg id="proposalArrow" class="w-6 h-6 transform transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </button>
-                    <div id="proposalContent" class="proposal-content expanded mt-4">
-                        <div class="proposal-text pt-4 border-t">
-                            <!-- Proposal Title -->
-                            <h3 class="text-center text-lg" id="proposalTitle"></h3>
-
-                            <!-- Introduction -->
-                            <h3>1. Introduction</h3>
-                            <p id="proposalIntro" class="text-justify"></p>
-
-                            <!-- Literature Review -->
-                            <h3>2. Literature Review</h3>
-                            <p id="proposalLitReview" class="text-justify"></p>
-
-                            <!-- Research Questions -->
-                            <h3>3. Research Questions</h3>
-                            <ol id="proposalQuestions" class="list-decimal list-inside space-y-2">
-                            </ol>
-
-                            <!-- Methodology -->
-                            <h3>4. Methodology</h3>
-                            <p id="proposalMethodology" class="text-justify"></p>
-
-                            <!-- Expected Outcomes -->
-                            <h3>5. Expected Outcomes</h3>
-                            <p id="proposalOutcomes" class="text-justify"></p>
-
-                            <!-- Timeline -->
-                            <div id="proposalTimelineSection">
-                                <h3>6. Timeline</h3>
-                                <p id="proposalTimeline" class="text-justify"></p>
-                            </div>
-
-                            <!-- References note -->
-                            <h3>7. References</h3>
-                            <p class="text-sm italic">See References section above for complete APA 7 formatted reference list.</p>
+            <!-- Research Proposal (Expandable) -->
+            <div id="proposalSection" class="card rounded-xl p-0 hidden fade-in overflow-hidden">
+                <button id="proposalToggle" class="w-full flex justify-between items-center p-5 bg-dark text-cream">
+                    <h2 class="text-sm font-bold uppercase tracking-wide">Research Proposal</h2>
+                    <svg id="proposalArrow" class="w-5 h-5 transform transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div id="proposalContent" class="proposal-content expanded">
+                    <div class="academic-paper">
+                        <!-- Title Page -->
+                        <div class="title-page">
+                            <h1 id="proposalTitle">Research Proposal Title</h1>
+                            <p class="author">Jane Doe</p>
+                            <p class="affiliation">Department of Computer Science<br>University of Technology</p>
+                            <p class="date" id="proposalDate"></p>
                         </div>
+
+                        <!-- Abstract -->
+                        <div class="abstract-section">
+                            <h2>Abstract</h2>
+                            <p id="proposalAbstract"></p>
+                            <p class="keywords"><strong>Keywords:</strong> <span id="proposalKeywords"></span></p>
+                        </div>
+
+                        <!-- 1. Introduction -->
+                        <h2><span class="section-number">1.</span> Introduction</h2>
+                        <h3>1.1 Background and Context</h3>
+                        <p id="proposalBackground"></p>
+                        <h3>1.2 Problem Statement</h3>
+                        <p id="proposalProblem"></p>
+                        <h3>1.3 Significance of the Study</h3>
+                        <p id="proposalSignificance"></p>
+                        <h3>1.4 Research Gap</h3>
+                        <p id="proposalGap"></p>
+
+                        <!-- 2. Literature Review -->
+                        <h2><span class="section-number">2.</span> Literature Review</h2>
+                        <h3>2.1 Summary of Existing Research</h3>
+                        <p id="proposalLitSummary"></p>
+                        <h3>2.2 Gaps in Current Knowledge</h3>
+                        <p id="proposalLitGaps"></p>
+                        <h3>2.3 Theoretical Framework</h3>
+                        <p id="proposalTheoretical"></p>
+
+                        <!-- 3. Research Questions/Objectives -->
+                        <h2><span class="section-number">3.</span> Research Questions and Objectives</h2>
+                        <h3>3.1 Research Questions</h3>
+                        <ol id="proposalQuestions"></ol>
+                        <h3>3.2 Research Objectives</h3>
+                        <ol id="proposalObjectives"></ol>
+
+                        <!-- 4. Methodology -->
+                        <h2><span class="section-number">4.</span> Methodology</h2>
+                        <h3>4.1 Research Design</h3>
+                        <p id="proposalDesign"></p>
+                        <h3>4.2 Data Collection Methods</h3>
+                        <p id="proposalDataCollection"></p>
+                        <h3>4.3 Sample Size and Selection</h3>
+                        <p id="proposalSample"></p>
+                        <h3>4.4 Data Analysis Techniques</h3>
+                        <p id="proposalAnalysis"></p>
+                        <h3>4.5 Tools and Technologies</h3>
+                        <p id="proposalTools"></p>
+
+                        <!-- 5. Expected Outcomes -->
+                        <h2><span class="section-number">5.</span> Expected Outcomes and Contributions</h2>
+                        <h3>5.1 Anticipated Results</h3>
+                        <p id="proposalResults"></p>
+                        <h3>5.2 Contribution to the Field</h3>
+                        <p id="proposalContribution"></p>
+                        <h3>5.3 Potential Applications</h3>
+                        <p id="proposalApplications"></p>
+
+                        <!-- 6. Timeline -->
+                        <h2><span class="section-number">6.</span> Timeline and Schedule</h2>
+                        <table id="proposalTimeline">
+                            <thead>
+                                <tr>
+                                    <th>Phase</th>
+                                    <th>Activities</th>
+                                    <th>Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody id="proposalTimelineBody">
+                            </tbody>
+                        </table>
+
+                        <!-- 7. Budget -->
+                        <h2><span class="section-number">7.</span> Budget</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Description</th>
+                                    <th>Estimated Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody id="proposalBudgetBody">
+                            </tbody>
+                        </table>
+                        <p class="no-indent" style="margin-top: 0.5rem;"><strong>Total Estimated Budget:</strong> <span id="proposalTotalBudget">$0</span></p>
+
+                        <!-- 8. References -->
+                        <div class="references-section">
+                            <h2><span class="section-number">8.</span> References</h2>
+                            <div id="proposalReferences"></div>
+                        </div>
+
+                        <p class="page-number">— 1 —</p>
                     </div>
                 </div>
             </div>
@@ -293,17 +674,28 @@
         const generateProposalBtn = document.getElementById('generateProposalBtn');
         const proposalBtnText = document.getElementById('proposalBtnText');
         const proposalBtnSpinner = document.getElementById('proposalBtnSpinner');
-        const referencesToggle = document.getElementById('referencesToggle');
-        const referencesContent = document.getElementById('referencesContent');
-        const referencesArrow = document.getElementById('referencesArrow');
 
         // Chart instance
         let trendChart = null;
 
-        // References toggle
-        referencesToggle.addEventListener('click', () => {
-            referencesContent.classList.toggle('expanded');
-            referencesArrow.classList.toggle('rotate-180');
+        // Tab functionality
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Update button states
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.classList.add('text-dark/60');
+                });
+                btn.classList.add('active');
+                btn.classList.remove('text-dark/60');
+
+                // Show corresponding panel
+                const tabName = btn.dataset.tab;
+                document.querySelectorAll('.tab-panel').forEach(panel => {
+                    panel.classList.add('hidden');
+                });
+                document.getElementById(`${tabName}Tab`).classList.remove('hidden');
+            });
         });
 
         // Proposal toggle
@@ -316,9 +708,19 @@
         generateProposalBtn.addEventListener('click', async () => {
             if (!currentAnalysisData) return;
 
+            // Get selected items
+            const selectedGaps = getSelectedItems('gapSelections');
+            const selectedQuestions = getSelectedItems('questionSelections');
+            const selectedMethods = getSelectedItems('methodSelections');
+
+            if (selectedGaps.length === 0 && selectedQuestions.length === 0 && selectedMethods.length === 0) {
+                alert('Please select at least one item for the proposal.');
+                return;
+            }
+
             // Set loading state
             generateProposalBtn.disabled = true;
-            proposalBtnText.textContent = 'Generating proposal...';
+            proposalBtnText.textContent = 'Generating...';
             proposalBtnSpinner.classList.remove('hidden');
 
             try {
@@ -329,9 +731,9 @@
                     },
                     body: JSON.stringify({
                         topic: currentAnalysisData.topic,
-                        research_gaps: currentAnalysisData.research_gaps,
-                        research_questions: currentAnalysisData.research_questions,
-                        methodology_suggestions: currentAnalysisData.methodology_suggestions
+                        research_gaps: selectedGaps,
+                        research_questions: selectedQuestions,
+                        methodology_suggestions: selectedMethods
                     }),
                 });
 
@@ -352,6 +754,16 @@
                 proposalBtnSpinner.classList.add('hidden');
             }
         });
+
+        // Get selected items from a selection container
+        function getSelectedItems(containerId) {
+            const container = document.getElementById(containerId);
+            const items = [];
+            container.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+                items.push(cb.dataset.value);
+            });
+            return items;
+        }
 
         // Form submission handler
         searchForm.addEventListener('submit', async (e) => {
@@ -445,31 +857,29 @@
 
             // Research gaps
             const gapsList = document.getElementById('researchGaps');
-            gapsList.innerHTML = data.research_gaps.map(gap =>
-                `<li class="flex items-start gap-2">
-                    <span class="text-blue-500 mt-1">&#8226;</span>
-                    <span class="text-gray-700">${escapeHtml(gap)}</span>
-                </li>`
+            gapsList.innerHTML = data.research_gaps.map((gap, i) =>
+                `<li class="p-3 bg-cream rounded-lg text-sm text-dark">${escapeHtml(gap)}</li>`
             ).join('');
 
             // Research questions
             const questionsList = document.getElementById('researchQuestions');
-            questionsList.innerHTML = data.research_questions.map(question =>
-                `<li class="text-gray-700">${escapeHtml(question)}</li>`
+            questionsList.innerHTML = data.research_questions.map((question, i) =>
+                `<li class="p-3 bg-cream rounded-lg text-sm text-dark">
+                    <span class="font-semibold">${i + 1}.</span> ${escapeHtml(question)}
+                </li>`
             ).join('');
 
             // Methodology suggestions
             const methodsList = document.getElementById('methodologySuggestions');
             methodsList.innerHTML = data.methodology_suggestions.map(method =>
-                `<li class="flex items-start gap-2">
-                    <span class="text-green-500 mt-1">&#8226;</span>
-                    <span class="text-gray-700">${escapeHtml(method)}</span>
-                </li>`
+                `<li class="p-3 bg-cream rounded-lg text-sm text-dark">${escapeHtml(method)}</li>`
             ).join('');
 
-            // Render references with abstracts
+            // Render references
             renderReferences(data.references);
-            document.getElementById('refCount').textContent = data.references.length;
+
+            // Render selection checkboxes
+            renderSelections(data);
 
             // Show results
             resultsSection.classList.remove('hidden');
@@ -478,26 +888,56 @@
             resultsSection.scrollIntoView({ behavior: 'smooth' });
         }
 
-        // Render references sidebar with abstracts
+        // Render selection checkboxes for proposal
+        function renderSelections(data) {
+            // Gap selections
+            const gapSelections = document.getElementById('gapSelections');
+            gapSelections.innerHTML = data.research_gaps.map((gap, i) =>
+                `<label class="flex items-start gap-2 cursor-pointer">
+                    <input type="checkbox" class="custom-checkbox mt-0.5" data-value="${escapeHtml(gap)}" checked>
+                    <span class="text-xs text-dark/80 line-clamp-2">${escapeHtml(gap.substring(0, 60))}${gap.length > 60 ? '...' : ''}</span>
+                </label>`
+            ).join('');
+
+            // Question selections
+            const questionSelections = document.getElementById('questionSelections');
+            questionSelections.innerHTML = data.research_questions.map((q, i) =>
+                `<label class="flex items-start gap-2 cursor-pointer">
+                    <input type="checkbox" class="custom-checkbox mt-0.5" data-value="${escapeHtml(q)}" checked>
+                    <span class="text-xs text-dark/80 line-clamp-2">${escapeHtml(q.substring(0, 60))}${q.length > 60 ? '...' : ''}</span>
+                </label>`
+            ).join('');
+
+            // Method selections
+            const methodSelections = document.getElementById('methodSelections');
+            methodSelections.innerHTML = data.methodology_suggestions.map((m, i) =>
+                `<label class="flex items-start gap-2 cursor-pointer">
+                    <input type="checkbox" class="custom-checkbox mt-0.5" data-value="${escapeHtml(m)}" checked>
+                    <span class="text-xs text-dark/80 line-clamp-2">${escapeHtml(m.substring(0, 60))}${m.length > 60 ? '...' : ''}</span>
+                </label>`
+            ).join('');
+        }
+
+        // Render references
         function renderReferences(references) {
             const refList = document.getElementById('referencesList');
             refList.innerHTML = references.map((ref, index) =>
-                `<div class="pb-4 border-b border-gray-100 last:border-0">
-                    <span class="font-bold text-blue-600">[${ref.number}]</span>
-                    <p class="text-gray-700 mt-1 text-xs leading-relaxed">
+                `<div class="pb-3 border-b border-dark/10 last:border-0">
+                    <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-cream bg-dark rounded-full">${ref.number}</span>
+                    <p class="text-dark/80 mt-1 text-xs leading-relaxed">
                         ${ref.url
-                            ? `<a href="${escapeHtml(ref.url)}" target="_blank" rel="noopener noreferrer" class="hover:text-blue-600 hover:underline">${escapeHtml(ref.reference)}</a>`
+                            ? `<a href="${escapeHtml(ref.url)}" target="_blank" rel="noopener noreferrer" class="hover:text-accent hover:underline">${escapeHtml(ref.reference)}</a>`
                             : escapeHtml(ref.reference)
                         }
                     </p>
                     <button
                         onclick="toggleAbstract(${index})"
-                        class="text-xs text-blue-500 hover:text-blue-700 mt-2 focus:outline-none"
+                        class="text-xs text-accent hover:underline mt-1 focus:outline-none font-medium"
                         id="abstractBtn${index}"
                     >
                         View Abstract
                     </button>
-                    <div id="abstract${index}" class="abstract-content mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                    <div id="abstract${index}" class="abstract-content mt-2 text-xs text-dark/60 bg-cream p-2 rounded">
                         ${escapeHtml(ref.abstract)}
                     </div>
                 </div>`
@@ -513,7 +953,6 @@
                 abstractEl.classList.remove('expanded');
                 btnEl.textContent = 'View Abstract';
             } else {
-                // Collapse all other abstracts (optional - one at a time)
                 document.querySelectorAll('.abstract-content').forEach(el => {
                     el.classList.remove('expanded');
                 });
@@ -526,27 +965,135 @@
             }
         }
 
-        // Render proposal
+        // Render proposal with comprehensive academic format
         function renderProposal(proposal) {
+            // Title and metadata
             document.getElementById('proposalTitle').textContent = proposal.title || 'Research Proposal';
-            document.getElementById('proposalIntro').textContent = proposal.introduction || '';
-            document.getElementById('proposalLitReview').textContent = proposal.literature_review || '';
+            document.getElementById('proposalDate').textContent = new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
 
-            // Research questions
+            // Generate abstract from introduction (first 200 words)
+            const intro = proposal.introduction || '';
+            const abstractText = intro.split(' ').slice(0, 200).join(' ') + (intro.split(' ').length > 200 ? '...' : '');
+            document.getElementById('proposalAbstract').textContent = abstractText;
+
+            // Generate keywords from topic
+            const topic = currentAnalysisData?.topic || 'research';
+            const keywords = topic.split(' ')
+                .filter(w => w.length > 3)
+                .slice(0, 5)
+                .join(', ') + ', methodology, analysis';
+            document.getElementById('proposalKeywords').textContent = keywords;
+
+            // Introduction sections
+            const introText = proposal.introduction || '';
+            const introParts = introText.split('. ');
+            const partSize = Math.ceil(introParts.length / 4);
+
+            document.getElementById('proposalBackground').textContent =
+                introParts.slice(0, partSize).join('. ') + '.';
+            document.getElementById('proposalProblem').textContent =
+                introParts.slice(partSize, partSize * 2).join('. ') + '.';
+            document.getElementById('proposalSignificance').textContent =
+                introParts.slice(partSize * 2, partSize * 3).join('. ') + '.';
+            document.getElementById('proposalGap').textContent =
+                introParts.slice(partSize * 3).join('. ') || 'This research addresses critical gaps identified in the current literature.';
+
+            // Literature Review sections
+            const litReview = proposal.literature_review || '';
+            const litParts = litReview.split('. ');
+            const litPartSize = Math.ceil(litParts.length / 3);
+
+            document.getElementById('proposalLitSummary').textContent =
+                litParts.slice(0, litPartSize).join('. ') + '.';
+            document.getElementById('proposalLitGaps').textContent =
+                litParts.slice(litPartSize, litPartSize * 2).join('. ') + '.';
+            document.getElementById('proposalTheoretical').textContent =
+                litParts.slice(litPartSize * 2).join('. ') || 'The theoretical framework draws upon established models in the field.';
+
+            // Research Questions
             const questionsEl = document.getElementById('proposalQuestions');
             const questions = proposal.research_questions || [];
             questionsEl.innerHTML = questions.map(q => `<li>${escapeHtml(q)}</li>`).join('');
 
-            document.getElementById('proposalMethodology').textContent = proposal.methodology || '';
-            document.getElementById('proposalOutcomes').textContent = proposal.expected_outcomes || '';
+            // Research Objectives (derived from questions)
+            const objectivesEl = document.getElementById('proposalObjectives');
+            objectivesEl.innerHTML = questions.map((q, i) => {
+                const objective = q.replace(/\?$/, '').replace(/^(What|How|Why|When|Where|Which|Can|Does|Do|Is|Are)\s+/i, 'To investigate ');
+                return `<li>${escapeHtml(objective)}</li>`;
+            }).join('');
 
-            // Timeline (optional)
-            const timelineSection = document.getElementById('proposalTimelineSection');
-            if (proposal.timeline) {
-                document.getElementById('proposalTimeline').textContent = proposal.timeline;
-                timelineSection.classList.remove('hidden');
+            // Methodology sections
+            const methodology = proposal.methodology || '';
+            const methParts = methodology.split('. ');
+            const methPartSize = Math.ceil(methParts.length / 5);
+
+            document.getElementById('proposalDesign').textContent =
+                methParts.slice(0, methPartSize).join('. ') + '.';
+            document.getElementById('proposalDataCollection').textContent =
+                methParts.slice(methPartSize, methPartSize * 2).join('. ') + '.';
+            document.getElementById('proposalSample').textContent =
+                methParts.slice(methPartSize * 2, methPartSize * 3).join('. ') || 'Sample selection will follow purposive sampling techniques appropriate for the research design.';
+            document.getElementById('proposalAnalysis').textContent =
+                methParts.slice(methPartSize * 3, methPartSize * 4).join('. ') || 'Data analysis will employ both quantitative and qualitative methods as appropriate.';
+            document.getElementById('proposalTools').textContent =
+                methParts.slice(methPartSize * 4).join('. ') || 'Research tools will include statistical software, data collection instruments, and analysis frameworks.';
+
+            // Expected Outcomes sections
+            const outcomes = proposal.expected_outcomes || '';
+            const outParts = outcomes.split('. ');
+            const outPartSize = Math.ceil(outParts.length / 3);
+
+            document.getElementById('proposalResults').textContent =
+                outParts.slice(0, outPartSize).join('. ') + '.';
+            document.getElementById('proposalContribution').textContent =
+                outParts.slice(outPartSize, outPartSize * 2).join('. ') + '.';
+            document.getElementById('proposalApplications').textContent =
+                outParts.slice(outPartSize * 2).join('. ') || 'The findings will have practical applications in both academic and industry settings.';
+
+            // Timeline table
+            const timelineBody = document.getElementById('proposalTimelineBody');
+            const timelineData = [
+                { phase: 'Phase 1', activities: 'Literature Review & Research Design', duration: 'Months 1-2' },
+                { phase: 'Phase 2', activities: 'Data Collection & Instrument Development', duration: 'Months 3-5' },
+                { phase: 'Phase 3', activities: 'Data Analysis & Interpretation', duration: 'Months 6-8' },
+                { phase: 'Phase 4', activities: 'Writing & Revision', duration: 'Months 9-10' },
+                { phase: 'Phase 5', activities: 'Final Review & Submission', duration: 'Months 11-12' }
+            ];
+            timelineBody.innerHTML = timelineData.map(row =>
+                `<tr><td>${row.phase}</td><td>${row.activities}</td><td>${row.duration}</td></tr>`
+            ).join('');
+
+            // Budget table
+            const budgetBody = document.getElementById('proposalBudgetBody');
+            const budgetData = [
+                { item: 'Equipment', description: 'Computing resources and software licenses', cost: '$2,500' },
+                { item: 'Data Collection', description: 'Survey tools, participant compensation', cost: '$1,500' },
+                { item: 'Travel', description: 'Conference presentations and fieldwork', cost: '$3,000' },
+                { item: 'Publication', description: 'Open access fees and formatting', cost: '$2,000' },
+                { item: 'Miscellaneous', description: 'Printing, supplies, contingency', cost: '$1,000' }
+            ];
+            budgetBody.innerHTML = budgetData.map(row =>
+                `<tr><td>${row.item}</td><td>${row.description}</td><td>${row.cost}</td></tr>`
+            ).join('');
+            document.getElementById('proposalTotalBudget').textContent = '$10,000';
+
+            // References (APA format)
+            const referencesEl = document.getElementById('proposalReferences');
+            if (currentAnalysisData?.references) {
+                const refs = currentAnalysisData.references.slice(0, 10);
+                referencesEl.innerHTML = refs.map(ref =>
+                    `<p class="reference-item">${escapeHtml(ref.reference)}</p>`
+                ).join('');
             } else {
-                timelineSection.classList.add('hidden');
+                referencesEl.innerHTML = `
+                    <p class="reference-item">Doe, J., & Smith, A. (2024). Advances in research methodology. <em>Journal of Academic Research, 15</em>(3), 45-67. https://doi.org/10.1000/example</p>
+                    <p class="reference-item">Johnson, M. (2023). Theoretical frameworks in modern research. <em>Research Quarterly, 28</em>(2), 112-128.</p>
+                    <p class="reference-item">Williams, K., Brown, L., & Davis, R. (2023). Data analysis techniques for the digital age. <em>Computational Methods Journal, 7</em>(4), 234-256.</p>
+                `;
             }
         }
 
@@ -554,12 +1101,10 @@
         function renderChart(chartData) {
             const ctx = document.getElementById('trendChart').getContext('2d');
 
-            // Destroy existing chart
             if (trendChart) {
                 trendChart.destroy();
             }
 
-            // Create new chart
             trendChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -567,26 +1112,31 @@
                     datasets: [{
                         label: 'Average Citations',
                         data: chartData.citations,
-                        borderColor: 'rgb(59, 130, 246)',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.3,
+                        borderColor: '#141413',
+                        backgroundColor: 'rgba(20, 20, 19, 0.1)',
+                        tension: 0.4,
                         fill: true,
-                        pointBackgroundColor: 'rgb(59, 130, 246)',
-                        pointRadius: 5,
-                        pointHoverRadius: 7
+                        pointBackgroundColor: '#141413',
+                        pointBorderColor: '#F0EEE6',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            display: false
-                        },
+                        legend: { display: false },
                         tooltip: {
+                            backgroundColor: '#141413',
+                            titleFont: { size: 11, weight: '600' },
+                            bodyFont: { size: 10 },
+                            padding: 8,
+                            cornerRadius: 4,
                             callbacks: {
                                 label: function(context) {
-                                    return `Avg Citations: ${context.raw.toFixed(1)}`;
+                                    return `Avg: ${context.raw.toFixed(1)}`;
                                 }
                             }
                         }
@@ -594,16 +1144,12 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Average Citations'
-                            }
+                            grid: { color: 'rgba(20, 20, 19, 0.05)' },
+                            ticks: { font: { size: 10 } }
                         },
                         x: {
-                            title: {
-                                display: true,
-                                text: 'Publication Year'
-                            }
+                            grid: { display: false },
+                            ticks: { font: { size: 10 } }
                         }
                     }
                 }
@@ -613,9 +1159,9 @@
         // Format trend direction
         function formatTrend(trend) {
             const formats = {
-                'heating_up': 'Heating Up',
+                'heating_up': 'Rising',
                 'stable': 'Stable',
-                'cooling_down': 'Cooling Down'
+                'cooling_down': 'Declining'
             };
             return formats[trend] || trend;
         }
@@ -623,11 +1169,11 @@
         // Get trend color class
         function getTrendColor(trend) {
             const colors = {
-                'heating_up': 'text-red-500',
-                'stable': 'text-yellow-500',
-                'cooling_down': 'text-blue-500'
+                'heating_up': 'text-green-600',
+                'stable': 'text-yellow-600',
+                'cooling_down': 'text-red-600'
             };
-            return colors[trend] || 'text-gray-600';
+            return colors[trend] || 'text-dark';
         }
 
         // Escape HTML to prevent XSS
