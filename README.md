@@ -92,7 +92,7 @@ Analyze a research topic.
   "status": "success",
   "topic": "machine learning in healthcare",
   "paper_summary": {
-    "total_papers": 25,
+    "total_papers": 60,
     "avg_citations": 42.5
   },
   "trend_analysis": {

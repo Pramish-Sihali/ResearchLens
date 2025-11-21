@@ -38,7 +38,7 @@ def search_papers(topic: str, limit: int = PAPERS_PER_REQUEST) -> List[dict]:
 
     Args:
         topic: Research topic to search for
-        limit: Maximum number of papers to retrieve (default: 25)
+        limit: Maximum number of papers to retrieve (default: 60)
 
     Returns:
         List of paper dictionaries with title, abstract, year, citationCount, authors
@@ -94,7 +94,7 @@ def fetch_and_process_papers(topic: str) -> List[dict]:
     """
     Fetch papers and process them for analysis.
 
-    - Fetches up to 25 papers
+    - Fetches up to 60 papers
     - Filters out papers without essential fields
     - Sorts by relevance and recency (prioritizes last 3 years)
 
