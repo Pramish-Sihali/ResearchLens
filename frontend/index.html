@@ -246,6 +246,93 @@
             background: #f5f5f5;
         }
 
+        /* Page break styles for printing/PDF */
+        @media print {
+            .academic-paper {
+                padding: 0;
+            }
+
+            /* Page numbering */
+            @page {
+                margin: 1in;
+                @bottom-center {
+                    content: "— " counter(page) " —";
+                    font-family: 'Times New Roman', Times, serif;
+                    font-size: 10pt;
+                }
+            }
+
+            /* Title page - no page number */
+            .academic-paper .title-page {
+                page: title-page;
+            }
+
+            @page title-page {
+                @bottom-center {
+                    content: none;
+                }
+            }
+
+            /* Mandatory page breaks */
+            .academic-paper .title-page {
+                page-break-after: always;
+            }
+
+            .academic-paper .abstract-section {
+                page-break-after: always;
+            }
+
+            .academic-paper .references-section {
+                page-break-before: always;
+            }
+
+            /* Recommended page breaks - after major sections */
+            .academic-paper .section-literature-review {
+                page-break-after: always;
+            }
+
+            /* Keep tables together */
+            .academic-paper table {
+                page-break-inside: avoid;
+            }
+
+            /* Keep headings with content */
+            .academic-paper h2,
+            .academic-paper h3 {
+                page-break-after: avoid;
+            }
+
+            /* Avoid orphans and widows */
+            .academic-paper p {
+                orphans: 3;
+                widows: 3;
+            }
+
+            /* Hide screen-only page number */
+            .academic-paper .page-number {
+                display: none;
+            }
+        }
+
+        /* Page break indicators for screen (visual only) */
+        .page-break-indicator {
+            border-top: 2px dashed #ccc;
+            margin: 2rem 0;
+            position: relative;
+        }
+
+        .page-break-indicator::after {
+            content: 'Page Break';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 0 10px;
+            font-size: 9pt;
+            color: #999;
+        }
+
         /* References section */
         .references-content {
             max-height: 0;
@@ -364,12 +451,15 @@
     </style>
 </head>
 <body>
-    <div class="container mx-auto px-4 py-6 max-w-6xl">
-        <!-- Header -->
-        <header class="text-center mb-8">
-            <h1 class="text-4xl font-extrabold text-dark mb-2">ResearchLens</h1>
-            <p class="text-dark/60 text-base font-medium">AI-Powered Research Analysis & Discovery</p>
-        </header>
+    <!-- Fixed Header -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-accent py-4">
+        <div class="container mx-auto px-4 max-w-6xl">
+            <h1 class="text-2xl font-extrabold text-white text-start">ResearchLens</h1>
+            <p class="text-white/60 text-sm font-medium text-start">AI-Powered Research Analysis & Discovery</p>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-6 max-w-6xl" style="padding-top: 100px;">
 
         <!-- Search Form -->
         <div class="card rounded-xl p-6 mb-6">
@@ -536,9 +626,12 @@
 
             <!-- Research Proposal (Expandable) -->
             <div id="proposalSection" class="card rounded-xl p-0 hidden fade-in overflow-hidden">
-                <button id="proposalToggle" class="w-full flex justify-between items-center p-5 bg-dark text-cream">
-                    <h2 class="text-sm font-bold uppercase tracking-wide">Research Proposal</h2>
-                    <svg id="proposalArrow" class="w-5 h-5 transform transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button id="proposalToggle" class="w-full flex justify-between items-start p-5 bg-dark text-cream">
+                    <div>
+                        <h2 class="text-sm font-bold uppercase tracking-wide">Research Proposal</h2>
+                        <p class="text-xs text-cream/60 font-normal mt-1">For reference and templating only. Budget, timeline, and other details are sample assumptions.</p>
+                    </div>
+                    <svg id="proposalArrow" class="w-5 h-5 transform transition-transform rotate-180 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                     </svg>
                 </button>
@@ -571,13 +664,15 @@
                         <p id="proposalGap"></p>
 
                         <!-- 2. Literature Review -->
-                        <h2><span class="section-number">2.</span> Literature Review</h2>
-                        <h3>2.1 Summary of Existing Research</h3>
-                        <p id="proposalLitSummary"></p>
-                        <h3>2.2 Gaps in Current Knowledge</h3>
-                        <p id="proposalLitGaps"></p>
-                        <h3>2.3 Theoretical Framework</h3>
-                        <p id="proposalTheoretical"></p>
+                        <div class="section-literature-review">
+                            <h2><span class="section-number">2.</span> Literature Review</h2>
+                            <h3>2.1 Summary of Existing Research</h3>
+                            <p id="proposalLitSummary"></p>
+                            <h3>2.2 Gaps in Current Knowledge</h3>
+                            <p id="proposalLitGaps"></p>
+                            <h3>2.3 Theoretical Framework</h3>
+                            <p id="proposalTheoretical"></p>
+                        </div>
 
                         <!-- 3. Research Questions/Objectives -->
                         <h2><span class="section-number">3.</span> Research Questions and Objectives</h2>
@@ -644,6 +739,25 @@
                         </div>
 
                         <p class="page-number">— 1 —</p>
+                    </div>
+
+                    <!-- Download Options -->
+                    <div class="p-6 border-t border-dark/10 bg-cream/50" style="font-family: 'Nunito', sans-serif;">
+                        <p class="text-xs text-dark/60 mb-3 text-center">Download this proposal for your records</p>
+                        <div class="flex gap-3 justify-center">
+                            <button onclick="downloadAsPDF()" class="px-4 py-2 bg-dark text-cream rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-accent transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Download PDF
+                            </button>
+                            <!-- <button onclick="downloadAsDOCX()" class="px-4 py-2 bg-dark text-cream rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-accent transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Download DOCX
+                            </button> -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1181,6 +1295,140 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Download proposal as PDF
+        function downloadAsPDF() {
+            const proposalContent = document.querySelector('.academic-paper');
+            const printWindow = window.open('', '_blank');
+            const topic = currentAnalysisData?.topic || 'Download';
+
+            const styles = `
+                body {
+                    font-family: 'Times New Roman', Times, serif;
+                    font-size: 12pt;
+                    line-height: 2;
+                    color: #000;
+                    background: white;
+                    padding: 1in;
+                    margin: 0;
+                }
+                .title-page {
+                    text-align: center;
+                    padding: 2in 0;
+                    page-break-after: always;
+                }
+                .title-page h1 {
+                    font-size: 18pt;
+                    font-weight: bold;
+                    margin-bottom: 2rem;
+                    text-transform: uppercase;
+                }
+                .title-page .author { font-size: 12pt; margin: 0.5rem 0; }
+                .title-page .affiliation { font-size: 11pt; font-style: italic; margin: 0.5rem 0; }
+                .title-page .date { font-size: 12pt; margin-top: 2rem; }
+                .abstract-section { margin: 2rem 0; }
+                .abstract-section h2 { font-size: 14pt; font-weight: bold; text-align: center; margin-bottom: 1rem; }
+                .abstract-section p { text-align: justify; text-indent: 0; font-size: 11pt; line-height: 1.5; }
+                .keywords { margin-top: 1rem; font-size: 11pt; }
+                h2 { font-size: 14pt; font-weight: bold; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+                h3 { font-size: 12pt; font-weight: bold; margin-top: 1rem; margin-bottom: 0.5rem; }
+                p { text-align: justify; text-indent: 0.5in; margin-bottom: 0; }
+                p.no-indent { text-indent: 0; }
+                ul, ol { margin-left: 0.5in; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+                li { margin-bottom: 0.25rem; }
+                table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 11pt; }
+                th, td { border: 1px solid #000; padding: 0.5rem; text-align: left; }
+                th { font-weight: bold; background: #f5f5f5; }
+                .reference-item { text-indent: -0.5in; padding-left: 0.5in; margin-bottom: 0.5rem; line-height: 1.5; }
+                .page-number { text-align: center; font-size: 10pt; margin-top: 1rem; color: #666; }
+
+                /* Page breaks */
+                .title-page { page-break-after: always; }
+                .abstract-section { page-break-after: always; }
+                .references-section { page-break-before: always; }
+                .section-literature-review { page-break-after: always; }
+                table { page-break-inside: avoid; }
+                h2, h3 { page-break-after: avoid; }
+                p { orphans: 3; widows: 3; }
+                .page-number { display: none; }
+
+                /* Page numbering */
+                @page {
+                    margin: 1in;
+                    @bottom-center {
+                        content: "— " counter(page) " —";
+                        font-family: 'Times New Roman', Times, serif;
+                        font-size: 10pt;
+                    }
+                }
+
+                @media print {
+                    body { padding: 0; }
+                }
+            `;
+
+            printWindow.document.write('<!DOCTYPE html><html><head>');
+            printWindow.document.write('<title>Research Proposal - ' + topic + '<\/title>');
+            printWindow.document.write('<style>' + styles + '<\/style>');
+            printWindow.document.write('<\/head><body>');
+            printWindow.document.write(proposalContent.innerHTML);
+            printWindow.document.write('<\/body><\/html>');
+
+            printWindow.document.close();
+            printWindow.focus();
+
+            setTimeout(function() {
+                printWindow.print();
+                printWindow.close();
+            }, 250);
+        }
+
+        // Download proposal as DOCX
+        function downloadAsDOCX() {
+            const proposalContent = document.querySelector('.academic-paper');
+            const title = document.getElementById('proposalTitle').textContent;
+
+            const styles = `
+                body {
+                    font-family: 'Times New Roman', Times, serif;
+                    font-size: 12pt;
+                    line-height: 2;
+                }
+                h1 { font-size: 18pt; font-weight: bold; text-align: center; text-transform: uppercase; }
+                h2 { font-size: 14pt; font-weight: bold; margin-top: 24pt; }
+                h3 { font-size: 12pt; font-weight: bold; margin-top: 12pt; }
+                p { text-align: justify; text-indent: 36pt; margin: 0 0 12pt 0; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td { border: 1px solid black; padding: 6pt; }
+                th { background-color: #f0f0f0; font-weight: bold; }
+                .title-page { text-align: center; margin-bottom: 72pt; }
+                .author, .affiliation, .date { text-align: center; margin: 6pt 0; }
+            `;
+
+            // Create HTML content for Word
+            let htmlContent = '<!DOCTYPE html>';
+            htmlContent += '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">';
+            htmlContent += '<head><meta charset="utf-8">';
+            htmlContent += '<title>' + title + '<\/title>';
+            htmlContent += '<style>' + styles + '<\/style>';
+            htmlContent += '<\/head><body>';
+            htmlContent += proposalContent.innerHTML;
+            htmlContent += '<\/body><\/html>';
+
+            // Create blob and download
+            const blob = new Blob(['\ufeff', htmlContent], {
+                type: 'application/msword'
+            });
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'Research_Proposal_' + (currentAnalysisData?.topic || 'document').replace(/\s+/g, '_') + '.doc';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
