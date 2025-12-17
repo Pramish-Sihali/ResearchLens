@@ -105,7 +105,7 @@ export function Results({ data, onGenerateProposal, proposalLoading }: ResultsPr
                 <Line
                   type="monotone"
                   dataKey="citations"
-                  stroke="hsl(var(--primary))"
+                  stroke=""
                   strokeWidth={2}
                   dot={false}
                 />
