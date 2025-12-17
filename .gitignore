@@ -28,6 +28,7 @@ ENV/
 
 # Environment variables
 .env
+research-lens-ui/.env
 
 # Claude
 .claude/
@@ -44,3 +45,9 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Node.js (Frontend)
+node_modules/
+research-lens-ui/node_modules/
+research-lens-ui/dist/
+*.tsbuildinfo

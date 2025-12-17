@@ -316,3 +316,6 @@ def format_apa_reference(paper: dict, ref_number: int) -> dict:
 
 # Global rate limiter instance for Semantic Scholar API
 semantic_scholar_limiter = RateLimiter(min_interval=1.0)
+
+# Gemini free tier rate limiter - 15 requests per minute = 1 per 4 seconds (with buffer)
+gemini_limiter = RateLimiter(min_interval=5.0)

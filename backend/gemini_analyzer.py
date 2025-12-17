@@ -1,37 +1,56 @@
 """
-Gemini API integration for research proposal generation.
+AWS Nova (Bedrock) integration for research proposal generation.
 Analyzes papers and generates research gaps, questions, and methodology suggestions.
 """
 
 import os
-import requests
 import json
 import re
+import boto3
 from typing import List
 from pathlib import Path
 from dotenv import load_dotenv
+from botocore.exceptions import ClientError
 from utils import retry_with_backoff, format_paper_for_prompt, logger
 
 # Load environment variables from parent directory
 env_path = Path(__file__).parent.parent / '.env'
 load_dotenv(env_path)
 
-# API Configuration
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# AWS Configuration
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 
-if not GEMINI_API_KEY:
-    logger.warning("GEMINI_API_KEY not found in environment variables")
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+# Nova model ID - using nova-lite for balanced performance
+NOVA_MODEL_ID = os.getenv("NOVA_MODEL_ID", "amazon.nova-lite-v1:0")
+
+if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
+    logger.warning("AWS credentials not found in environment variables")
+
+# Initialize Bedrock client
+def get_bedrock_client():
+    """Get or create Bedrock runtime client."""
+    return boto3.client(
+        'bedrock-runtime',
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        region_name=AWS_REGION
+    )
 
 
-class GeminiError(Exception):
-    """Custom exception for Gemini API errors."""
+class NovaError(Exception):
+    """Custom exception for Nova API errors."""
     pass
+
+
+# Keep GeminiError as alias for backward compatibility
+GeminiError = NovaError
 
 
 def create_analysis_prompt(topic: str, papers: List[dict]) -> str:
     """
-    Create the prompt for Gemini analysis.
+    Create the prompt for Nova analysis.
 
     Args:
         topic: Research topic
@@ -101,10 +120,10 @@ IMPORTANT: Return ONLY the JSON object, no additional text or markdown formattin
     return prompt
 
 
-@retry_with_backoff(max_retries=3, base_delay=2.0, exceptions=(requests.RequestException, GeminiError))
+@retry_with_backoff(max_retries=3, base_delay=2.0, exceptions=(ClientError, NovaError))
 def analyze_papers(topic: str, papers: List[dict]) -> dict:
     """
-    Send papers to Gemini for analysis and get research proposals.
+    Send papers to Nova for analysis and get research proposals.
 
     Args:
         topic: Research topic
@@ -114,115 +133,110 @@ def analyze_papers(topic: str, papers: List[dict]) -> dict:
         Dictionary with research_gaps, research_questions, methodology_suggestions, novelty_assessment
 
     Raises:
-        GeminiError: If API request fails or response parsing fails
+        NovaError: If API request fails or response parsing fails
     """
     if not papers:
-        raise GeminiError("No papers provided for analysis")
+        raise NovaError("No papers provided for analysis")
 
     # Create the prompt
     prompt = create_analysis_prompt(topic, papers)
 
-    logger.info(f"Sending {len(papers)} papers to Gemini for analysis")
+    logger.info(f"Sending {len(papers)} papers to Nova for analysis")
 
-    # Prepare request payload
+    # Prepare request payload for Nova
     payload = {
-        "contents": [
+        "messages": [
             {
-                "parts": [
-                    {
-                        "text": prompt
-                    }
-                ]
+                "role": "user",
+                "content": [{"text": prompt}]
             }
-        ]
-    }
-
-    headers = {
-        "Content-Type": "application/json",
-        "x-goog-api-key": GEMINI_API_KEY
+        ],
+        "inferenceConfig": {
+            "maxTokens": 4096,
+            "temperature": 0.7,
+            "topP": 0.9
+        }
     }
 
     try:
-        response = requests.post(
-            GEMINI_URL,
-            headers=headers,
-            json=payload,
-            timeout=60
+        client = get_bedrock_client()
+
+        response = client.invoke_model(
+            modelId=NOVA_MODEL_ID,
+            contentType="application/json",
+            accept="application/json",
+            body=json.dumps(payload)
         )
 
-        if response.status_code == 429:
-            raise GeminiError("Gemini rate limit exceeded. Please try again later.")
-        elif response.status_code == 400:
-            raise GeminiError(f"Bad request to Gemini: {response.text}")
-        elif response.status_code != 200:
-            raise GeminiError(
-                f"Gemini API request failed with status {response.status_code}: {response.text}"
-            )
+        # Parse the response
+        response_body = json.loads(response['body'].read())
 
-        data = response.json()
+        # Extract the generated text from Nova response
+        if 'output' not in response_body or 'message' not in response_body['output']:
+            raise NovaError("Invalid Nova response structure")
 
-        # Extract the generated text
-        if "candidates" not in data or not data["candidates"]:
-            raise GeminiError("No candidates in Gemini response")
+        message = response_body['output']['message']
+        if 'content' not in message or not message['content']:
+            raise NovaError("No content in Nova response")
 
-        candidate = data["candidates"][0]
-
-        if "content" not in candidate or "parts" not in candidate["content"]:
-            raise GeminiError("Invalid Gemini response structure")
-
-        generated_text = candidate["content"]["parts"][0].get("text", "")
+        generated_text = message['content'][0].get('text', '')
 
         if not generated_text:
-            raise GeminiError("Empty response from Gemini")
+            raise NovaError("Empty response from Nova")
 
         # Parse the JSON response
-        analysis = parse_gemini_response(generated_text)
+        analysis = parse_response(generated_text)
 
-        logger.info("Successfully received and parsed Gemini analysis")
+        logger.info("Successfully received and parsed Nova analysis")
 
         return analysis
 
-    except requests.Timeout:
-        raise GeminiError("Gemini request timed out")
-    except requests.RequestException as e:
-        raise GeminiError(f"Gemini request failed: {str(e)}")
+    except ClientError as e:
+        error_code = e.response['Error']['Code']
+        error_message = e.response['Error']['Message']
+        if error_code == 'ThrottlingException':
+            raise NovaError(f"Nova rate limit exceeded: {error_message}")
+        elif error_code == 'ValidationException':
+            raise NovaError(f"Invalid request to Nova: {error_message}")
+        else:
+            raise NovaError(f"Nova API error ({error_code}): {error_message}")
 
 
-def parse_gemini_response(response_text: str) -> dict:
+def parse_response(response_text: str) -> dict:
     """
-    Parse the JSON response from Gemini.
+    Parse the JSON response from Nova.
 
     Args:
-        response_text: Raw text response from Gemini
+        response_text: Raw text response from Nova
 
     Returns:
         Parsed dictionary with analysis results
 
     Raises:
-        GeminiError: If JSON parsing fails
+        NovaError: If JSON parsing fails
     """
     # Try to extract JSON from the response
-    # Sometimes Gemini wraps JSON in markdown code blocks
+    # Sometimes the model wraps JSON in markdown code blocks
     json_match = re.search(r'\{[\s\S]*\}', response_text)
 
     if not json_match:
-        raise GeminiError("Could not find JSON in Gemini response")
+        raise NovaError("Could not find JSON in Nova response")
 
     json_str = json_match.group()
 
     try:
         analysis = json.loads(json_str)
     except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse Gemini JSON: {e}")
+        logger.error(f"Failed to parse Nova JSON: {e}")
         logger.debug(f"Raw response: {response_text}")
-        raise GeminiError(f"Failed to parse Gemini response as JSON: {str(e)}")
+        raise NovaError(f"Failed to parse Nova response as JSON: {str(e)}")
 
     # Validate required fields
     required_fields = ["research_gaps", "research_questions", "methodology_suggestions", "novelty_assessment"]
 
     for field in required_fields:
         if field not in analysis:
-            logger.warning(f"Missing field '{field}' in Gemini response, using default")
+            logger.warning(f"Missing field '{field}' in Nova response, using default")
             if field == "novelty_assessment":
                 analysis[field] = "Analysis unavailable"
             else:
@@ -238,6 +252,10 @@ def parse_gemini_response(response_text: str) -> dict:
         analysis["novelty_assessment"] = str(analysis.get("novelty_assessment", ""))
 
     return analysis
+
+
+# Keep old function name as alias for backward compatibility
+parse_gemini_response = parse_response
 
 
 def get_default_analysis() -> dict:
@@ -330,7 +348,7 @@ Return ONLY the JSON object, no additional text or markdown formatting.'''
     return prompt
 
 
-@retry_with_backoff(max_retries=3, base_delay=2.0, exceptions=(requests.RequestException, GeminiError))
+@retry_with_backoff(max_retries=3, base_delay=2.0, exceptions=(ClientError, NovaError))
 def generate_proposal(topic: str, papers: List[dict], analysis: dict) -> dict:
     """
     Generate a research proposal based on the analysis.
@@ -344,54 +362,55 @@ def generate_proposal(topic: str, papers: List[dict], analysis: dict) -> dict:
         Dictionary with proposal sections
 
     Raises:
-        GeminiError: If API request fails
+        NovaError: If API request fails
     """
     if not papers or not analysis:
-        raise GeminiError("Papers and analysis required for proposal generation")
+        raise NovaError("Papers and analysis required for proposal generation")
 
     prompt = create_proposal_prompt(topic, papers, analysis)
 
-    logger.info("Generating research proposal with Gemini...")
+    logger.info("Generating research proposal with Nova...")
 
+    # Prepare request payload for Nova
     payload = {
-        "contents": [
+        "messages": [
             {
-                "parts": [
-                    {
-                        "text": prompt
-                    }
-                ]
+                "role": "user",
+                "content": [{"text": prompt}]
             }
-        ]
-    }
-
-    headers = {
-        "Content-Type": "application/json",
-        "x-goog-api-key": GEMINI_API_KEY
+        ],
+        "inferenceConfig": {
+            "maxTokens": 8192,
+            "temperature": 0.7,
+            "topP": 0.9
+        }
     }
 
     try:
-        response = requests.post(
-            GEMINI_URL,
-            headers=headers,
-            json=payload,
-            timeout=90  # Longer timeout for proposal generation
+        client = get_bedrock_client()
+
+        response = client.invoke_model(
+            modelId=NOVA_MODEL_ID,
+            contentType="application/json",
+            accept="application/json",
+            body=json.dumps(payload)
         )
 
-        if response.status_code != 200:
-            raise GeminiError(
-                f"Proposal generation failed with status {response.status_code}: {response.text}"
-            )
+        # Parse the response
+        response_body = json.loads(response['body'].read())
 
-        data = response.json()
+        # Extract the generated text from Nova response
+        if 'output' not in response_body or 'message' not in response_body['output']:
+            raise NovaError("Invalid Nova response structure for proposal")
 
-        if "candidates" not in data or not data["candidates"]:
-            raise GeminiError("No candidates in Gemini response for proposal")
+        message = response_body['output']['message']
+        if 'content' not in message or not message['content']:
+            raise NovaError("No content in Nova proposal response")
 
-        generated_text = data["candidates"][0]["content"]["parts"][0].get("text", "")
+        generated_text = message['content'][0].get('text', '')
 
         if not generated_text:
-            raise GeminiError("Empty proposal response from Gemini")
+            raise NovaError("Empty proposal response from Nova")
 
         # Parse the JSON response
         proposal = parse_proposal_response(generated_text)
@@ -400,15 +419,15 @@ def generate_proposal(topic: str, papers: List[dict], analysis: dict) -> dict:
 
         return proposal
 
-    except requests.Timeout:
-        raise GeminiError("Proposal generation timed out")
-    except requests.RequestException as e:
-        raise GeminiError(f"Proposal generation failed: {str(e)}")
+    except ClientError as e:
+        error_code = e.response['Error']['Code']
+        error_message = e.response['Error']['Message']
+        raise NovaError(f"Proposal generation failed ({error_code}): {error_message}")
 
 
 def parse_proposal_response(response_text: str) -> dict:
     """
-    Parse the proposal JSON response from Gemini.
+    Parse the proposal JSON response from Nova.
 
     Args:
         response_text: Raw text response
@@ -419,12 +438,12 @@ def parse_proposal_response(response_text: str) -> dict:
     json_match = re.search(r'\{[\s\S]*\}', response_text)
 
     if not json_match:
-        raise GeminiError("Could not find JSON in proposal response")
+        raise NovaError("Could not find JSON in proposal response")
 
     try:
         proposal = json.loads(json_match.group())
     except json.JSONDecodeError as e:
-        raise GeminiError(f"Failed to parse proposal JSON: {str(e)}")
+        raise NovaError(f"Failed to parse proposal JSON: {str(e)}")
 
     # Validate required fields
     required_fields = ["title", "introduction", "literature_review", "research_questions",

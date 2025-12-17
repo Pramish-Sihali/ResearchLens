@@ -20,7 +20,7 @@ SEMANTIC_SCHOLAR_API_KEY = os.getenv("SEMANTIC_SCHOLAR_API_KEY")
 if not SEMANTIC_SCHOLAR_API_KEY:
     logger.warning("SEMANTIC_SCHOLAR_API_KEY not found in environment variables")
 BASE_URL = "https://api.semanticscholar.org/graph/v1"
-PAPERS_PER_REQUEST = 60
+PAPERS_PER_REQUEST = 50
 
 # Fields to retrieve for each paper
 PAPER_FIELDS = "title,abstract,year,citationCount,authors,url,externalIds,venue,journal"
@@ -38,7 +38,7 @@ def search_papers(topic: str, limit: int = PAPERS_PER_REQUEST) -> List[dict]:
 
     Args:
         topic: Research topic to search for
-        limit: Maximum number of papers to retrieve (default: 60)
+        limit: Maximum number of papers to retrieve (default:25)
 
     Returns:
         List of paper dictionaries with title, abstract, year, citationCount, authors
@@ -94,9 +94,9 @@ def fetch_and_process_papers(topic: str) -> List[dict]:
     """
     Fetch papers and process them for analysis.
 
-    - Fetches up to 60 papers
+    - Fetches up to 50 papers
     - Filters out papers without essential fields
-    - Sorts by relevance and recency (prioritizes last 3 years)
+    - Sorts by year (most recent first), then by citation count
 
     Args:
         topic: Research topic
@@ -113,7 +113,7 @@ def fetch_and_process_papers(topic: str) -> List[dict]:
 
     # Filter and process papers
     processed_papers = []
-    current_year = 2024
+    current_year = 2025
 
     for paper in raw_papers:
         # Skip papers without title
@@ -151,23 +151,17 @@ def fetch_and_process_papers(topic: str) -> List[dict]:
             "pages": pages
         }
 
-        # Calculate a relevance score for sorting
-        # Prioritize recent papers (within last 3 years) and citation count
+        # Calculate sort score: prioritize year first, then citations
         year = processed["year"] or 0
         citations = processed["citationCount"] or 0
 
-        # Recency bonus: papers from last 3 years get higher score
-        if year and year >= current_year - 3:
-            recency_bonus = (year - (current_year - 3)) * 100
-        else:
-            recency_bonus = 0
-
-        # Combined score: recency + citation impact
-        processed["_sort_score"] = recency_bonus + min(citations, 500)
+        # Year as primary sort (multiply by 10000 to ensure it dominates)
+        # Then add normalized citation count as secondary
+        processed["_sort_score"] = (year * 10000) + min(citations, 9999)
 
         processed_papers.append(processed)
 
-    # Sort by combined score (descending)
+    # Sort by year (descending) then citations (descending)
     processed_papers.sort(key=lambda x: x.get("_sort_score", 0), reverse=True)
 
     # Remove internal sort score before returning
