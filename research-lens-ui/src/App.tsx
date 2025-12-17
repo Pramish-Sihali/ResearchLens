@@ -4,6 +4,7 @@ import { SearchForm } from "@/components/SearchForm";
 import { Results } from "@/components/Results";
 import { References } from "@/components/References";
 import { Proposal } from "@/components/Proposal";
+import { AuthForm } from "@/components/AuthForm";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
 
@@ -52,12 +53,24 @@ export interface HistoryItem {
 }
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState("");
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [currentAnalysis, setCurrentAnalysis] = useState<AnalysisData | null>(null);
   const [currentProposal, setCurrentProposal] = useState<ProposalData | null>(null);
   const [loading, setLoading] = useState(false);
   const [proposalLoading, setProposalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Check for saved auth on mount
+  useEffect(() => {
+    const savedAuth = localStorage.getItem("researchlens-auth");
+    if (savedAuth) {
+      const { username: savedUsername } = JSON.parse(savedAuth);
+      setUsername(savedUsername);
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   // Load history from localStorage
   useEffect(() => {
@@ -161,12 +174,34 @@ function App() {
     localStorage.removeItem("researchlens-history");
   };
 
+  const handleLogin = (loginUsername: string) => {
+    setUsername(loginUsername);
+    setIsAuthenticated(true);
+    localStorage.setItem("researchlens-auth", JSON.stringify({ username: loginUsername }));
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setUsername("");
+    localStorage.removeItem("researchlens-auth");
+    setHistory([]);
+    setCurrentAnalysis(null);
+    setCurrentProposal(null);
+  };
+
+  // Show auth form if not authenticated
+  if (!isAuthenticated) {
+    return <AuthForm onLogin={handleLogin} />;
+  }
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar
         history={history}
         onSelect={handleSelectHistory}
         onClear={handleClearHistory}
+        username={username}
+        onLogout={handleLogout}
       />
 
       <main className="flex-1 overflow-auto">

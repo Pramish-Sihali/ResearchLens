@@ -1,17 +1,18 @@
-import { Clock, Trash2, FileText, Key } from "lucide-react";
+import { Clock, Trash2, FileText, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { HistoryItem } from "@/App";
 
 interface SidebarProps {
   history: HistoryItem[];
   onSelect: (item: HistoryItem) => void;
   onClear: () => void;
+  username?: string;
+  onLogout?: () => void;
 }
 
-export function Sidebar({ history, onSelect, onClear }: SidebarProps) {
+export function Sidebar({ history, onSelect, onClear, username, onLogout }: SidebarProps) {
   const formatTime = (date: Date) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -27,24 +28,33 @@ export function Sidebar({ history, onSelect, onClear }: SidebarProps) {
 
   return (
     <aside className="w-64 border-r bg-sidebar flex flex-col">
+      {/* User Info */}
+      {username && (
+        <div className="p-4 border-b bg-primary/5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium">{username}</span>
+            </div>
+            {onLogout && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onLogout}
+                className="h-7 px-2"
+              >
+                <LogOut className="w-3 h-3" />
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="p-4 border-b">
         <h2 className="font-semibold text-sm text-sidebar-foreground flex items-center gap-2">
           <Clock className="w-4 h-4" />
           Search History
         </h2>
-      </div>
-
-      {/* Demo Credentials Info */}
-      <div className="p-3 border-b bg-muted/30">
-        <Alert className="bg-primary/10 border-primary/20">
-          <Key className="h-4 w-4" />
-          <AlertDescription className="text-xs">
-            <div className="font-semibold mb-1">Demo Mode</div>
-            <p className="text-muted-foreground">
-              Using sample AWS credentials. Update .env with your keys for full access.
-            </p>
-          </AlertDescription>
-        </Alert>
       </div>
 
       <ScrollArea className="flex-1">
