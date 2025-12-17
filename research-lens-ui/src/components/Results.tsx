@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, Minus, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   LineChart,
@@ -25,6 +24,13 @@ export function Results({ data, onGenerateProposal, proposalLoading }: ResultsPr
   const [selectedGaps, setSelectedGaps] = useState<string[]>(data.research_gaps);
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>(data.research_questions);
   const [selectedMethods, setSelectedMethods] = useState<string[]>(data.methodology_suggestions);
+
+  // Reset selections when data changes (new search)
+  useEffect(() => {
+    setSelectedGaps(data.research_gaps);
+    setSelectedQuestions(data.research_questions);
+    setSelectedMethods(data.methodology_suggestions);
+  }, [data.topic]); // Reset when topic changes
 
   const chartData = data.trend_analysis.chart_data.years.map((year, i) => ({
     year,
@@ -105,7 +111,7 @@ export function Results({ data, onGenerateProposal, proposalLoading }: ResultsPr
                 <Line
                   type="monotone"
                   dataKey="citations"
-                  stroke=""
+                  stroke="hsl(var(--primary))"
                   strokeWidth={2}
                   dot={false}
                 />
@@ -119,11 +125,10 @@ export function Results({ data, onGenerateProposal, proposalLoading }: ResultsPr
       <Card>
         <Tabs defaultValue="gaps">
           <CardHeader className="pb-0">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="gaps">Gaps</TabsTrigger>
               <TabsTrigger value="questions">Questions</TabsTrigger>
               <TabsTrigger value="methods">Methods</TabsTrigger>
-              <TabsTrigger value="refs">References</TabsTrigger>
             </TabsList>
           </CardHeader>
           <CardContent className="pt-4">
@@ -171,36 +176,6 @@ export function Results({ data, onGenerateProposal, proposalLoading }: ResultsPr
                         onCheckedChange={() => toggleItem(m, selectedMethods, setSelectedMethods)}
                       />
                       <p className="text-sm">{m}</p>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="refs" className="mt-0">
-              <ScrollArea className="h-64">
-                <div className="space-y-3">
-                  {data.references.map((ref) => (
-                    <div key={ref.number} className="p-2 border-b last:border-0">
-                      <div className="flex items-start gap-2">
-                        <Badge variant="secondary" className="shrink-0">
-                          {ref.number}
-                        </Badge>
-                        <div>
-                          {ref.url ? (
-                            <a
-                              href={ref.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm hover:text-primary hover:underline"
-                            >
-                              {ref.reference}
-                            </a>
-                          ) : (
-                            <p className="text-sm">{ref.reference}</p>
-                          )}
-                        </div>
-                      </div>
                     </div>
                   ))}
                 </div>

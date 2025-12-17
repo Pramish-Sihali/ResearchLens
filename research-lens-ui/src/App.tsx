@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { SearchForm } from "@/components/SearchForm";
 import { Results } from "@/components/Results";
+import { References } from "@/components/References";
 import { Proposal } from "@/components/Proposal";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
@@ -190,11 +191,16 @@ function App() {
 
           {/* Results */}
           {currentAnalysis && (
-            <Results
-              data={currentAnalysis}
-              onGenerateProposal={handleGenerateProposal}
-              proposalLoading={proposalLoading}
-            />
+            <>
+              <Results
+                data={currentAnalysis}
+                onGenerateProposal={handleGenerateProposal}
+                proposalLoading={proposalLoading}
+              />
+
+              {/* References */}
+              <References references={currentAnalysis.references} />
+            </>
           )}
 
           {/* Proposal */}
